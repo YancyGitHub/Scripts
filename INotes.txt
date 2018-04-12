@@ -1,0 +1,67 @@
+
+************************************************************************
+******** Android APP配置system权限 ******** 
+************************************************************************
+1) APP：
+    AndroidMainfest.xml 的根节点添加属性 android:sharedUserId="android.uid.system"
+
+2) APP签名：（两种方法）
+      a) 有源码，且源码放到系统平台源码中编译，在APP 的 Android.mk 中添加 LOCAL_CERTIFICATE := platform
+      b) APP 不放到平台源码中编译，将编译好的APP使用 build/target/product/security/ 目录下的 platform.pk8 和 platform.x509.pem 签名：
+            (签名需要使用平台源码编译出来的工具)
+            java -Djava.library.path=out/host/linux-x86/lib64 -jar out/host/linux-x86/framework/signapk.jar build/target/product/security/platform.x509.pem build/target/product/security/platform.pk8 old.apk sign.apk
+
+3) 设备节点权限：
+      a) 设备节点在 init.rc 中配置 system 用户和用户组
+      b) SELinux 需要给设备节点开启访问权限
+
+
+************************************************************************
+******** MTK平台强制开启4核CPU ******** 
+************************************************************************
+echo 0 > /proc/hps/enabled
+echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+echo performance > /sys/devices/system/cpu/cpu1/cpufreq/scaling_governor
+echo 1 > /sys/devices/system/cpu/cpu0/online
+echo 1 > /sys/devices/system/cpu/cpu1/online
+echo 1 > /sys/devices/system/cpu/cpu2/online
+echo 1 > /sys/devices/system/cpu/cpu3/online
+
+
+************************************************************************
+******** 长按POWER键不显示Dialog，直接关机 ******** 
+************************************************************************
+1) adb shell setprop service.adb.root 1
+2) adb remount
+3) adb shell setenforce 0
+4) adb pull /system/build.prop ~/
+     编辑从Android系统中提取的文件 build.prop，在文件末尾增加一句 factory.long_press_power_off=1，保 存。
+5) adb push ~/build.prop /system/  （将编辑后的 build.prop 文件放到系统）
+6) adb shell rm -f /system/build.prop.bakforspec（这个不同平台可能不一样，找到对应的prop备份文件删除，否则可能开不了机）
+7) adb reboot
+
+重启后，执行 adb shell getprop factory.long_press_power_off 得到的值为1, 说明设置成功。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
